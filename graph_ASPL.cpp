@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <cstring>
 
-#undef __AVX2__
+//#undef __AVX2__
 
 #ifdef __AVX2__
   #include <immintrin.h>
