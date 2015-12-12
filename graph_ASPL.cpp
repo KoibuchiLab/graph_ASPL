@@ -31,23 +31,23 @@ uint64_t m;
 #define BIT_ON(A, i, j)   ((A)[(i)*row_len*(bits/64)+(j)/64] |= (0x1ULL << ((j)%64)))
 
 uint64_t mul(const uint64_t * __restrict__ A, uint64_t * __restrict__ B){
-  unsigned int i,j;
   uint64_t c;
 //  c = 0;
-  for(i = 0; i < G.size(); ++i){
+  for(std::size_t i = 0; i < G.size(); ++i){
     #ifdef __AVX2__
-      __m256i *x, *y;
-      x = (__m256i*)B + i*row_len;
+      __m256i *x;
+      const __m256i *y;
+      x = reinterpret_cast<__m256i*>(B) + i*row_len;
     #endif
     
     for(std::vector<int>::iterator it = G[i].begin(); it != G[i].end(); ++it){
 #ifdef __AVX2__
-      y = (__m256i*)A + (*it)*row_len;
-      for(j = 0; j < row_len; ++j){
+      y = reinterpret_cast<const __m256i*>(A) + (*it)*row_len;
+      for(std::size_t j = 0; j < row_len; ++j){
         x[j] = _mm256_or_si256(x[j], y[j]);
       }
 #else
-      for(j = 0; j < row_len; ++j){
+      for(std::size_t j = 0; j < row_len; ++j){
         B[i*row_len+j] |= A[(*it)*row_len+j];
       }
 #endif
@@ -61,7 +61,7 @@ uint64_t mul(const uint64_t * __restrict__ A, uint64_t * __restrict__ B){
     }
   }
   c = 0;
-  for(i=0; i<row_len*(bits/64)*m; ++i){
+  for(unsigned int i=0; i<row_len*(bits/64)*m; ++i){
     c += _mm_popcnt_u64(B[i]);
   }
  
@@ -69,7 +69,7 @@ uint64_t mul(const uint64_t * __restrict__ A, uint64_t * __restrict__ B){
 }
 
 int main(){
-  unsigned int i, k;
+  unsigned int k;
   unsigned int a, b;
   uint64_t *A, *B;
   uint64_t e;
@@ -90,6 +90,7 @@ int main(){
   row_len = (m+bits-1)/bits;
 
 //  std::cout << G.size() << std::endl;
+  std::cout << bits << " " << row_len << std::endl;
 
 #ifdef __AVX2__
   A = (uint64_t *) _mm_malloc(row_len*m*sizeof(bm_t), 32);
@@ -106,7 +107,7 @@ int main(){
   std::memset(A, 0, row_len*m*sizeof(bm_t));
 
   e = 0;
-  for(i=0;i < m; i++){
+  for(unsigned int i=0;i < m; i++){
     for(std::vector<int>::iterator it = G[i].begin(); it != G[i].end(); ++it){
       BIT_ON(A,i,*it);
 //std::cout<< i << " " << *it << std::endl;
@@ -127,13 +128,14 @@ std::cout << G.size() << ", " << (double)e/m << std::endl;
     uint64_t num = mul(A, B);
     
 //std::cout<< k << " " << num << std::endl;
-
     std::swap(A, B);
+
     if(num == m*m){ ASPL += k*m*(m-1)/2; break;}
     ASPL -= (num-m)/2;
   }
 
-  std::cout << k << ", " << std::setprecision(32) << static_cast<double>(ASPL)/(m*(m-1)/2) << std::endl;
+  if(k <= m) std::cout << k << ", " << std::setprecision(32) << static_cast<double>(ASPL)/(m*(m-1)/2) << std::endl;
+  else { std::cout << "disconnected" << std::endl; }
 
 #ifdef __AVX2__
   _mm_free(A);
