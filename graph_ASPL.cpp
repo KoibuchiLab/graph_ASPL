@@ -90,7 +90,7 @@ int main(){
   row_len = (m+bits-1)/bits;
 
 //  std::cout << G.size() << std::endl;
-  std::cout << bits << " " << row_len << std::endl;
+//  std::cout << bits << " " << row_len << std::endl;
 
 #ifdef __AVX2__
   A = (uint64_t *) _mm_malloc(row_len*m*sizeof(bm_t), 32);
