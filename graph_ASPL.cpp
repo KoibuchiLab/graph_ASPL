@@ -110,6 +110,7 @@ int main(){
   for(unsigned int i=0;i < m; i++){
     for(std::vector<int>::iterator it = G[i].begin(); it != G[i].end(); ++it){
       BIT_ON(A,i,*it);
+      BIT_ON(B,i,*it);
 //std::cout<< i << " " << *it << std::endl;
       ++e;
     } 
@@ -121,17 +122,15 @@ std::cout << G.size() << ", " << (double)e/m << std::endl;
 
 //std::cout<<row_len << std::endl;
 
-  std::memcpy(B, A, row_len*m*sizeof(bm_t));
-
-  ASPL = -e;
+  ASPL = m*(m-1)-e;
   for(k=2; k <= m; ++k){
     uint64_t num = mul(A, B);
     
 //std::cout<< k << " " << num << std::endl;
     std::swap(A, B);
 
-    if(num == m*m){ ASPL += k*m*(m-1)/2; break;}
-    ASPL -= (num-m)/2;
+    if(num == m*m) break;
+    ASPL += (m*m-num)/2;
   }
 
   if(k <= m) std::cout << k << ", " << std::setprecision(32) << static_cast<double>(ASPL)/(m*(m-1)/2) << std::endl;
