@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <popcntintrin.h>
 
 //#undef __AVX2__
 

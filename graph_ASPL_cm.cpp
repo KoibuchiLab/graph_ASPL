@@ -4,18 +4,20 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <popcntintrin.h>
 
+#undef __AVX2__
 
 #ifdef __AVX2__
   #include <immintrin.h>
 #endif
 
-#undef __AVX2__
 
 // Maximum graph size
-#define N 100000
+#define N 1000000
 
-#define K 8
+// Column size
+#define K 64
 
 #ifdef __AVX2__
 typedef __m256i bm_t;
