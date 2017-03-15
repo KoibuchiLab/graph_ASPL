@@ -54,10 +54,10 @@ uint64_t mul(const bm_t * __restrict__ A, bm_t * __restrict__ B){
 #ifdef __AVX2__
     __m256i *x;
     const __m256i *y;
-    x = B + i*row_len;
 #else
-//    uint64_t *x;
+    uint64_t *x;
 #endif
+    x = B + i*row_len;
     
     for(std::vector<int>::iterator it = G[i].begin(); it != G[i].end(); ++it){
 #ifdef __AVX2__
