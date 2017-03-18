@@ -63,7 +63,9 @@ uint64_t mul(const bm_t * __restrict__ A, bm_t * __restrict__ B){
 #ifdef __AVX2__
       y = A + (*it)*row_len;
       for(std::size_t j = 0; j < row_len; ++j){
-        x[j] = _mm256_or_si256(x[j], y[j]);
+        __m256i yy = _mm256_load_si256(y+j);
+        __m256i xx = _mm256_load_si256(x+j);
+        _mm256_store_si256(x+j, _mm256_or_si256(xx, yy));
       }
 #else
       for(std::size_t j = 0; j < row_len; ++j){

@@ -6,7 +6,7 @@
 #include <cstring>
 #include <popcntintrin.h>
 
-#undef __AVX2__
+//#undef __AVX2__
 
 #ifdef __AVX2__
   #include <immintrin.h>
@@ -16,8 +16,8 @@
 // Maximum graph size
 #define N 1000000
 
-// Column size
-#define K 64
+// Column size (multiple of 4 for AVX2)
+#define K 512
 
 #ifdef __AVX2__
 typedef __m256i bm_t;
@@ -33,9 +33,6 @@ unsigned int row_len;
 std::vector<std::vector<int> > G(N);
 uint64_t m;
 
-
-#define BIT_ON(A, i, j)   ((A)[(i)*row_len*(bits/64)+(j)/64] |= (0x1ULL << ((j)%64)))
-
 uint64_t mul(const uint64_t * __restrict__ A, uint64_t * __restrict__ B){
   uint64_t c;
 //  c = 0;
@@ -43,14 +40,16 @@ uint64_t mul(const uint64_t * __restrict__ A, uint64_t * __restrict__ B){
     #ifdef __AVX2__
       __m256i *x;
       const __m256i *y;
-      x = reinterpret_cast<__m256i*>(B) + i*row_len;
+      x = reinterpret_cast<__m256i*>(B + i*K);
     #endif
     
     for(std::vector<int>::iterator it = G[i].begin(); it != G[i].end(); ++it){
 #ifdef __AVX2__
-      y = reinterpret_cast<const __m256i*>(A) + (*it)*row_len;
-      for(std::size_t j = 0; j < row_len; ++j){
-        x[j] = _mm256_or_si256(x[j], y[j]);
+      y = reinterpret_cast<const __m256i*>(A + (*it)*K);
+      for(std::size_t j = 0; j < K/4; ++j){
+        __m256i xx = _mm256_load_si256(x+j);
+        __m256i yy = _mm256_load_si256(y+j);
+        _mm256_store_si256(x+j, _mm256_or_si256(xx, yy));
       }
 #else
       for(std::size_t j = 0; j < K; ++j){
@@ -67,7 +66,7 @@ uint64_t mul(const uint64_t * __restrict__ A, uint64_t * __restrict__ B){
     }
   }
   c = 0;
-  for(unsigned int i=0; i<K*(bits/64)*m; ++i){
+  for(unsigned int i=0; i<K*m; ++i){
     c += _mm_popcnt_u64(B[i]);
   }
  
@@ -82,60 +81,55 @@ int main(){
   uint64_t e;
   uint64_t ASPL;
 
+  e = 0;
   m = 0;
   while(std::cin >> a >> b){
+//    if(find(G[a].begin(), G[a].end(), b) != G[a].end()) puts("duplicate");
     G[a].push_back(b);
     G[b].push_back(a);
     if(a > m) m = a;
     if(b > m) m = b;
+    ++e;
   }
 
   m++;
   G.resize(m);
 //  G.shrink_to_fit();
 
-  row_len = (m+bits-1)/bits;
+//  row_len = (m+bits-1)/bits;
+  row_len = (m+63)/64;
 
 //  std::cout << G.size() << std::endl;
 //  std::cout << bits << " " << row_len << std::endl;
 
 #ifdef __AVX2__
-  A = (uint64_t *) _mm_malloc(K*m*sizeof(bm_t), 32);
-  B = (uint64_t *) _mm_malloc(K*m*sizeof(bm_t), 32);
+  A = (uint64_t *) _mm_malloc(K*m*sizeof(uint64_t), 32);
+  B = (uint64_t *) _mm_malloc(K*m*sizeof(uint64_t), 32);
 #else
-  A = (uint64_t *) malloc(K*m*sizeof(bm_t));
-  B = (uint64_t *) malloc(K*m*sizeof(bm_t));
+  A = (uint64_t *) malloc(K*m*sizeof(uint64_t));
+  B = (uint64_t *) malloc(K*m*sizeof(uint64_t));
 #endif
 
   if(A==NULL || B==NULL){
     return 1;
   }
 
-  std::memset(A, 0, K*m*sizeof(bm_t));
+//  std::memset(A, 0, K*m*sizeof(bm_t));
+//  std::memset(B, 0, K*m*sizeof(bm_t));
 
-  e = 0;
-  for(unsigned int i=0;i < m; ++i){
-    for(std::vector<int>::iterator it = G[i].begin(); it != G[i].end(); ++it){
-//      BIT_ON(A,i,*it);
-//std::cout<< i << " " << *it << std::endl;
-      ++e;
-    } 
-  }
+  std::cout << G.size() << ", " << (double)2*e/m << std::endl;
 
-std::cout << G.size() << ", " << (double)e/m << std::endl;
 
-  e /= 2;
+//std::cout<<row_len<< std::endl;
+//std::cout<<(row_len +K-1)/K<< std::endl;
 
-//std::cout<<row_len << std::endl;
-
-//  std::memcpy(B, A, row_len*m*sizeof(bm_t));
 
   ASPL = m*(m-1);
   k = 0;
-  for(int t=0; t < (row_len+K-1)/K; ++t){
+  for(unsigned int t=0; t < (row_len+K-1)/K; ++t){
     unsigned int kk, l;
-    std::memset(A, 0, K*m*sizeof(bm_t));
-    std::memset(B, 0, K*m*sizeof(bm_t));
+    std::memset(A, 0, K*m*sizeof(uint64_t));
+    std::memset(B, 0, K*m*sizeof(uint64_t));
     for(l = 0; l < 64*K && 64*t*K+l < m; ++l){
       A[(64*t*K+l)*K+l/64] |= (0x1ULL<<(l%64));
       B[(64*t*K+l)*K+l/64] = A[(64*t*K+l)*K+l/64];
@@ -143,7 +137,7 @@ std::cout << G.size() << ", " << (double)e/m << std::endl;
     for(kk=1; kk <= m; ++kk){
       uint64_t num = mul(A, B);
     
-//std::cout<< k << " " << num << std::endl;
+//std::cout<< kk << " " << num << " " << e << std::endl;
       std::swap(A, B);
 
       if(num == m*l) break;
