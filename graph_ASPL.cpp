@@ -91,6 +91,7 @@ int main(){
   uint64_t e;
   uint64_t ASPL;
 
+  e = 0;
   m = 0;
   while(1){
     int a, b;
@@ -103,6 +104,7 @@ int main(){
     G[b].push_back(a);
     if((unsigned) a > m) m = a;
     if((unsigned) b > m) m = b;
+    e++;
   }
 
   m++;
@@ -130,37 +132,31 @@ int main(){
 
   std::memset(A, 0, row_len*m*sizeof(bm_t));
   std::memset(B, 0, row_len*m*sizeof(bm_t));
-
-  e = 0;
-  for(unsigned int i=0;i < m; i++){
-    for(std::vector<int>::iterator it = G[i].begin(); it != G[i].end(); ++it){
-      BIT_ON(A,i,*it);
-      BIT_ON(B,i,*it);
-      ++e;
-    } 
+  for(unsigned int i=0; i<m; i++){
+    BIT_ON(A,i,i);
+    BIT_ON(B,i,i);
   }
+
 
 #ifdef __AVX2__
   puts("AVX");
 #endif
 
-  std::cout << G.size() << ", " << (double)e/m << std::endl;
-
-  e /= 2;
+  std::cout << G.size() << ", " << (double)2*e/m << std::endl;
 
 
-  ASPL = m*(m-1)-e;
-  for(k=2; k <= m; ++k){
+  ASPL = m*(m-1);
+  for(k=1; k <= m; ++k){
     uint64_t num = mul(A, B);
 
-    
+//std::cout<< k << " " << num << std::endl;    
     std::swap(A, B);
 
     if(num == m*m) break;
-    ASPL += (m*m-num)/2;
+    ASPL += m*m-num;
   }
 
-  if(k <= m) std::cout << k << ", " << std::setprecision(32) << static_cast<double>(ASPL)/(m*(m-1)/2) << std::endl;
+  if(k <= m) std::cout << k << ", " << std::setprecision(32) << static_cast<double>(ASPL)/(m*(m-1)) << std::endl;
   else { std::cout << "disconnected" << std::endl; }
 
 #ifdef __AVX2__
