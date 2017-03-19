@@ -134,7 +134,7 @@ int main(){
     std::memset(A, 0, K*m*sizeof(uint64_t));
     std::memset(B, 0, K*m*sizeof(uint64_t));
     for(l = 0; l < 64*K && 64*t*K+l < m; ++l){
-      A[(64*t*K+l)*K+l/64] |= (0x1ULL<<(l%64));
+      A[(64*t*K+l)*K+l/64] = (0x1ULL<<(l%64));
       B[(64*t*K+l)*K+l/64] = A[(64*t*K+l)*K+l/64];
     }
     for(kk=1; kk <= m; ++kk){
