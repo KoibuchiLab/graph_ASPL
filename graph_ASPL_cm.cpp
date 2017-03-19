@@ -14,14 +14,28 @@
 
 
 // Maximum graph size
-#define N 10000000
+const int maxn = 10000000;
 
 // Column size (multiple of 4 for AVX2)
-#define K 24
+const int K = 24;
+
+int read_uint(){
+  int x=0;
+  int c=0;
+  while((unsigned) (c-'0')>9 && c != EOF) c = getchar_unlocked();
+  if(c==EOF) return -1;
+
+  do {
+    x *= 10;
+    x += c-'0';
+    c = getchar_unlocked();
+  } while((unsigned) (c-'0') < 10);
+
+  return x;
+}
 
 
-
-std::vector<std::vector<int> > G(N);
+std::vector<std::vector<int> > G(maxn);
 uint64_t m;
 unsigned int row_len;
 
@@ -65,20 +79,24 @@ uint64_t mul(const uint64_t * __restrict__ A, uint64_t * __restrict__ B){
 
 int main(){
   unsigned int k;
-  unsigned int a, b;
   uint64_t *A, *B;
   uint64_t e;
   uint64_t ASPL;
 
   e = 0;
   m = 0;
-  while(std::cin >> a >> b){
-//    if(find(G[a].begin(), G[a].end(), b) != G[a].end()) puts("duplicate");
+  while(1){
+    int a, b;
+    a = read_uint();
+    if(a < 0) break;
+    b = read_uint();
+    if(b < 0){ puts("ERROR"); return 1; }
+    if(a > maxn || b > maxn) { puts("Too large"); return 1;}
     G[a].push_back(b);
     G[b].push_back(a);
-    if(a > m) m = a;
-    if(b > m) m = b;
-    ++e;
+    if((unsigned) a > m) m = a;
+    if((unsigned) b > m) m = b;
+    e++;
   }
 
   m++;
