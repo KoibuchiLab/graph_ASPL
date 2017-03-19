@@ -27,8 +27,7 @@ unsigned int row_len;
 
 uint64_t mul(const uint64_t * __restrict__ A, uint64_t * __restrict__ B){
   uint64_t c;
-//  c = 0;
-  for(std::size_t i = 0; i < G.size(); ++i){
+  for(std::size_t i = 0; i < m; ++i){
     #ifdef __AVX2__
       __m256i *x;
       const __m256i *y;
@@ -48,14 +47,12 @@ uint64_t mul(const uint64_t * __restrict__ A, uint64_t * __restrict__ B){
         B[i*K+j] |= A[(*it)*K+j];
       }
 #endif
-/*
-      if(*it == G[i].back()){
-        for(j = 0; j < row_len; ++j){
-          c += _mm_popcnt_u64(B[i*row_len*(bits/64)+j]);
-        }
-      }
-*/
     }
+/*
+    for(unsigned int j=0; j<row_len; ++j){
+      c += _mm_popcnt_u64(B[i*K + j]);
+    }
+*/
   }
   c = 0;
   for(unsigned int i=0; i<K*m; ++i){
