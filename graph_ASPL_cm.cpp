@@ -14,24 +14,16 @@
 
 
 // Maximum graph size
-#define N 1000000
+#define N 10000000
 
 // Column size (multiple of 4 for AVX2)
-#define K 512
+#define K 24
 
-#ifdef __AVX2__
-typedef __m256i bm_t;
-#else
-typedef uint64_t bm_t;
-#endif
-
-const int bits = sizeof(bm_t)*8;
-
-unsigned int row_len;
 
 
 std::vector<std::vector<int> > G(N);
 uint64_t m;
+unsigned int row_len;
 
 uint64_t mul(const uint64_t * __restrict__ A, uint64_t * __restrict__ B){
   uint64_t c;
@@ -96,11 +88,9 @@ int main(){
   G.resize(m);
 //  G.shrink_to_fit();
 
-//  row_len = (m+bits-1)/bits;
   row_len = (m+63)/64;
 
 //  std::cout << G.size() << std::endl;
-//  std::cout << bits << " " << row_len << std::endl;
 
 #ifdef __AVX2__
   A = (uint64_t *) _mm_malloc(K*m*sizeof(uint64_t), 32);
@@ -114,14 +104,12 @@ int main(){
     return 1;
   }
 
-//  std::memset(A, 0, K*m*sizeof(bm_t));
-//  std::memset(B, 0, K*m*sizeof(bm_t));
-
   std::cout << G.size() << ", " << (double)2*e/m << std::endl;
 
 
 //std::cout<<row_len<< std::endl;
 //std::cout<<(row_len +K-1)/K<< std::endl;
+  int parsize = (row_len +K-1)/K;
 
 
   ASPL = m*(m-1);
@@ -137,7 +125,7 @@ int main(){
     for(kk=1; kk <= m; ++kk){
       uint64_t num = mul(A, B);
     
-//std::cout<< kk << " " << num << " " << e << std::endl;
+      std::cout << t << " / " << parsize << ": " << kk << " " << num << std::endl;
       std::swap(A, B);
 
       if(num == m*l) break;
