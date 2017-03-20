@@ -90,7 +90,7 @@ int main(){
     if(a < 0) break;
     b = read_uint();
     if(b < 0){ puts("ERROR"); return 1; }
-    if(a > maxn || b > maxn) { puts("Too large"); return 1;}
+    if(a >= maxn || b >= maxn) { puts("Too large"); return 1;}
     G[a].push_back(b);
     G[b].push_back(a);
     if((unsigned) a > m) m = a;
